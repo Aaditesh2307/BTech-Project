@@ -1,5 +1,5 @@
 /**
- * fileParser.js  —  LexAI Legal AI Platform
+ * fileParser.js  —  Amar Kale & Associates Legal AI Platform
  *
  * Handles on-device text extraction from uploaded files.
  *

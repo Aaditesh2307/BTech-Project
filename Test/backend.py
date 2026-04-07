@@ -17,7 +17,7 @@ import uvicorn
 #  MONGODB SETUP
 # ──────────────────────────────────────────────
 
-MONGO_URI = ""
+MONGO_URI = "mongodb+srv://aaditesh23_db_user:hIcxIUk2caAd5YA8@cluster0.rxdu8jm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 DB_NAME   = "lexai_db"
 
 mongo_client   = AsyncIOMotorClient(MONGO_URI)

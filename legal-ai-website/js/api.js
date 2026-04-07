@@ -1,5 +1,5 @@
 /**
- * api.js  —  LexAI Legal AI Platform
+ * api.js  —  Amar Kale & Associates Legal AI Platform
  *
  * ╔══════════════════════════════════════════════════════════╗
  * ║  PLACEHOLDER  —  Replace GCP_BASE_URL with your         ║

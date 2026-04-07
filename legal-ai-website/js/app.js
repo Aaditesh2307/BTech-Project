@@ -1,5 +1,5 @@
 /**
- * app.js  —  LexAI Legal AI Platform
+ * app.js  —  Amar Kale & Associates Legal AI Platform
  * Main application controller: chat, sessions, mode toggle, file upload,
  * mobile sidebar drawer, and localStorage persistence via Storage module.
  */
@@ -241,6 +241,10 @@
         return session;
     }
 
+    function normalizeSessionTitle(title) {
+        return String(title || '').replace(/^📄\s*/, '').trim();
+    }
+
     function getSession(id) {
         return state.sessions.find(s => s.id === id);
     }
@@ -268,7 +272,7 @@
         }
 
         setMode(session.mode || 'summarize');
-        dom.topbarTitle.textContent = session.title;
+        dom.topbarTitle.textContent = normalizeSessionTitle(session.title);
         renderMessages(session.messages);
         renderSessionList();
     }
@@ -317,10 +321,13 @@
             const isActive = s.id === state.currentSessionId;
             const modeClass = s.mode === 'qa' ? 'badge-qa' : 'badge-summarize';
             const modeLabel = s.mode === 'qa' ? 'Q&A' : 'Summary';
-            const docBadge = s.documentMeta ? `<span>📄 ${escapeHtml((s.documentMeta.name || '').slice(0, 18))}</span>` : '';
+                        const docBadge = s.documentMeta ? `
+                            <span class="session-doc-badge">
+                                <span>${escapeHtml((s.documentMeta.name || '').slice(0, 18))}</span>
+                            </span>` : '';
             return `
         <div class="session-item ${isActive ? 'active' : ''}" data-session-id="${s.id}">
-          <div class="session-item-title">${escapeHtml(s.title)}</div>
+                        <div class="session-item-title">${escapeHtml(normalizeSessionTitle(s.title))}</div>
           <div class="session-item-meta">
             <span class="session-mode-badge ${modeClass}">${modeLabel}</span>
             ${docBadge}
@@ -368,7 +375,7 @@
         const isUser = msg.role === 'user';
         const avatarClass = isUser ? 'user-avatar' : 'ai-avatar';
         const avatarLabel = isUser ? '👤' : '⚖';
-        const senderName = isUser ? 'You' : 'LexAI';
+        const senderName = isUser ? 'You' : 'Legal Assistant';
         const modeTag = msg.mode
             ? `<span class="message-mode-tag ${msg.mode === 'qa' ? 'badge-qa' : 'badge-summarize'}">${msg.mode === 'qa' ? 'Q&A' : 'Summary'}</span>`
             : '';
@@ -565,9 +572,9 @@
 
         if (session.messages.length === 1) {
             session.title = pendingFile
-                ? `📄 ${(pendingFile.name || '').slice(0, 28)}`
+                ? `${(pendingFile.name || '').slice(0, 28)}`
                 : userMsgText.slice(0, 36) + (userMsgText.length > 36 ? '…' : '');
-            dom.topbarTitle.textContent = session.title;
+            dom.topbarTitle.textContent = normalizeSessionTitle(session.title);
         }
 
         // Persist updated session to storage
@@ -675,8 +682,11 @@
     //  THEME TOGGLE (dark ↔ light)
     // ══════════════════════════════════════════════
 
+    const THEME_KEY = 'amar_kale_theme';
+    const LEGACY_THEME_KEY = 'le' + 'xai_theme';
+
     function initTheme() {
-        const saved = localStorage.getItem('lexai_theme') || 'dark';
+        const saved = localStorage.getItem(THEME_KEY) || localStorage.getItem(LEGACY_THEME_KEY) || 'dark';
         document.documentElement.setAttribute('data-theme', saved);
     }
 
@@ -684,7 +694,7 @@
         const current = document.documentElement.getAttribute('data-theme') || 'dark';
         const next = current === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('lexai_theme', next);
+        localStorage.setItem(THEME_KEY, next);
         showToast(next === 'light' ? '☀️ Light mode on' : '🌙 Dark mode on', 'info', 2000);
     }
 

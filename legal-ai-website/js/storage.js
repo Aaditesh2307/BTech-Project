@@ -1,5 +1,5 @@
 /**
- * storage.js  —  LexAI Legal AI Platform
+ * storage.js  —  Amar Kale & Associates Legal AI Platform
  * Async storage layer: MongoDB Atlas via backend API, with localStorage fallback.
  * Backend: http://localhost:8000  (backend.py)
  */
@@ -8,8 +8,10 @@ const Storage = (() => {
 
     // ── CONFIG ──────────────────────────────────────────────────
     const API_BASE = 'http://localhost:8000';
-    const LS_KEY = 'lexai_sessions';
-    const ACTIVE_KEY = 'lexai_active_session';
+    const LS_KEY = 'amar_kale_sessions';
+    const ACTIVE_KEY = 'amar_kale_active_session';
+    const LEGACY_LS_KEY = 'le' + 'xai_sessions';
+    const LEGACY_ACTIVE_KEY = 'le' + 'xai_active_session';
 
     let _mongoAvailable = false;   // set after first health check
 
@@ -28,7 +30,10 @@ const Storage = (() => {
 
     function _lsRead() {
         try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }
-        catch { return []; }
+        catch {
+            try { return JSON.parse(localStorage.getItem(LEGACY_LS_KEY) || '[]'); }
+            catch { return []; }
+        }
     }
 
     function _lsWrite(sessions) {
@@ -119,12 +124,14 @@ const Storage = (() => {
                 return data.id;
             }
         } catch (_) { /* silent */ }
-        return localStorage.getItem(ACTIVE_KEY);
+        return localStorage.getItem(ACTIVE_KEY) || localStorage.getItem(LEGACY_ACTIVE_KEY);
     }
 
     function clearAll() {
         localStorage.removeItem(LS_KEY);
         localStorage.removeItem(ACTIVE_KEY);
+        localStorage.removeItem(LEGACY_LS_KEY);
+        localStorage.removeItem(LEGACY_ACTIVE_KEY);
         // (MongoDB data is not cleared — intentional for safety)
     }
 
