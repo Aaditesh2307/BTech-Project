@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LexAI — Legal Intelligence Platform</title>
+  <meta name="description" content="AI-powered legal document analysis: summarization and question answering for Indian legal judgments." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <!-- PDF.js for client-side PDF text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════ PARTICLES BACKGROUND -->
+  <div id="particles-bg" aria-hidden="true"></div>
+
+  <!-- ══════════════════════════════════════════════ APP SHELL -->
+  <div class="app-shell" id="appShell">
+
+    <!-- Sidebar backdrop (mobile tap-to-close overlay) -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+    <!-- ── SIDEBAR ──────────────────────────────────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-mark">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M18 3L33 10.5V25.5L18 33L3 25.5V10.5L18 3Z" stroke="url(#gold)" stroke-width="1.5"/>
+            <path d="M12 18H24M18 12V24" stroke="url(#gold)" stroke-width="2" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="gold" x1="3" y1="3" x2="33" y2="33" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#D4A017"/>
+                <stop offset="1" stop-color="#F5C842"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-name">LexAI</span>
+          <span class="logo-tagline">Legal Intelligence</span>
+        </div>
+        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Collapse sidebar" title="Collapse sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/></svg>
+        </button>
+      </div>
+
+      <button class="new-session-btn" id="newSessionBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+        New Session
+      </button>
+
+      <div class="sidebar-section-label">Recent Sessions</div>
+      <div class="session-list" id="sessionList">
+        <!-- Populated by JS -->
+        <div class="session-empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-3-3v6M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round"/></svg>
+          <p>No sessions yet.<br/>Start a new one above.</p>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="model-status" id="modelStatus">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-text" id="statusText">Connecting…</span>
+        </div>
+        <div class="sidebar-footer-links">
+          <a href="#" id="aboutLink" class="footer-link">About</a>
+          <span class="footer-sep">·</span>
+          <a href="#" id="docsLink" class="footer-link">API Docs</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── MAIN CONTENT ─────────────────────────────────────────────────── -->
+    <main class="main-content" id="mainContent">
+
+      <!-- TOP BAR -->
+      <header class="topbar" id="topbar">
+        <button class="topbar-expand-btn" id="topbarExpandBtn" aria-label="Expand sidebar" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18" stroke-linecap="round"/></svg>
+        </button>
+        <div class="topbar-session-title" id="topbarSessionTitle">New Session</div>
+
+        <!-- MODE TOGGLE -->
+        <div class="mode-toggle-wrapper" id="modeToggleWrapper" title="Switch between Summarize and Q&A mode">
+          <div class="mode-toggle" id="modeToggle">
+            <div class="mode-toggle-slider" id="modeSlider"></div>
+            <button class="mode-btn active" id="btnSummarize" data-mode="summarize">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h8v2H4V8zm0 4h10v2H4v-2z"/></svg>
+              Summarize
+            </button>
+            <button class="mode-btn" id="btnQA" data-mode="qa">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 12a1 1 0 110-2 1 1 0 010 2zm1-4H9V6h2v4z"/></svg>
+              Q&amp;A
+            </button>
+          </div>
+          <span class="mode-badge" id="modeBadge">Summarize</span>
+        </div>
+
+        <div class="topbar-actions">
+          <!-- Theme toggle -->
+          <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle light/dark mode" aria-label="Toggle light/dark mode">
+            <!-- Moon icon (shown in dark mode) -->
+            <svg class="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/>
+            </svg>
+            <!-- Sun icon (shown in light mode) -->
+            <svg class="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          </button>
+          <button class="icon-btn" id="clearChatBtn" title="Clear current chat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- CHAT AREA -->
+      <div class="chat-area" id="chatArea">
+
+        <!-- WELCOME SCREEN (shown when no messages) -->
+        <div class="welcome-screen" id="welcomeScreen">
+          <div class="welcome-glow" aria-hidden="true"></div>
+          <div class="welcome-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M32 6L58 21V43L32 58L6 43V21L32 6Z" stroke="url(#wg1)" stroke-width="2"/>
+              <path d="M22 32h20M32 22v20" stroke="url(#wg1)" stroke-width="2.5" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="wg1" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#D4A017"/>
+                  <stop offset="1" stop-color="#F5C842"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <h1 class="welcome-title">LexAI Legal Assistant</h1>
+          <p class="welcome-subtitle">Upload a legal document or start typing. Switch between <strong>Summarize</strong> and <strong>Q&amp;A</strong> modes anytime — your document context is preserved.</p>
+
+          <div class="capability-cards">
+            <div class="cap-card">
+              <div class="cap-icon">📄</div>
+              <div class="cap-label">Upload PDF, DOCX, or TXT</div>
+            </div>
+            <div class="cap-card">
+              <div class="cap-icon">🔍</div>
+              <div class="cap-label">Ask precise legal questions</div>
+            </div>
+            <div class="cap-card">
+              <div class="cap-icon">📝</div>
+              <div class="cap-label">Get concise AI summaries</div>
+            </div>
+            <div class="cap-card">
+              <div class="cap-icon">⚡</div>
+              <div class="cap-label">Switch modes without re-uploading</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MESSAGES CONTAINER -->
+        <div class="messages-container" id="messagesContainer" style="display:none;" role="log" aria-live="polite" aria-label="Chat messages"></div>
+
+      </div>
+
+      <!-- DOCUMENT CONTEXT BANNER (shown after file upload) -->
+      <div class="doc-context-bar" id="docContextBar" style="display:none;">
+        <div class="doc-context-info">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="doc-icon"><path d="M4 2h8l4 4v12H4V2zm8 0v4h4"/></svg>
+          <span class="doc-name" id="docName">document.pdf</span>
+          <span class="doc-meta" id="docMeta">· 4.2 KB · extracted</span>
+        </div>
+        <div class="doc-context-actions">
+          <span class="doc-context-ready">Context loaded ✓</span>
+          <button class="doc-clear-btn" id="docClearBtn" title="Remove document">✕</button>
+        </div>
+      </div>
+
+      <!-- INPUT AREA -->
+      <div class="input-area" id="inputArea">
+        <!-- FILE UPLOAD DRAG OVERLAY -->
+        <div class="drag-overlay" id="dragOverlay" aria-hidden="true">
+          <div class="drag-overlay-inner">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M24 6v24M14 16l10-10 10 10M8 38h32" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <p>Drop your legal document here</p>
+          </div>
+        </div>
+
+        <div class="input-box-wrapper">
+          <!-- FILE CHIP (preview when file selected) -->
+          <div class="file-chip-area" id="fileChipArea" style="display:none;">
+            <div class="file-chip" id="fileChip">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 2h8l4 4v12H4V2z"/></svg>
+              <span class="file-chip-name" id="fileChipName">document.pdf</span>
+              <button class="file-chip-remove" id="fileChipRemove" aria-label="Remove file">✕</button>
+            </div>
+          </div>
+
+          <div class="input-row">
+            <!-- Upload button -->
+            <button class="attach-btn" id="attachBtn" title="Upload document (PDF, DOCX, TXT)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <input type="file" id="fileInput" accept=".pdf,.txt,.docx" hidden aria-label="Upload legal document" />
+
+            <!-- Text input -->
+            <div class="textarea-wrapper">
+              <textarea
+                id="chatInput"
+                placeholder="Ask a legal question or request a summary…"
+                rows="1"
+                aria-label="Message input"
+                spellcheck="true"
+              ></textarea>
+            </div>
+
+            <!-- Send button -->
+            <button class="send-btn" id="sendBtn" aria-label="Send message" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+
+          <div class="input-footer">
+            <span class="input-mode-hint" id="inputModeHint">Mode: <strong>Summarize</strong> — upload a document or paste text to summarize</span>
+            <span class="input-char-count" id="charCount"></span>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ MOBILE BOTTOM MODE BAR -->
+  <div class="mobile-mode-bar" id="mobileModeBar" aria-label="Mode selector">
+    <div class="mode-toggle" id="modeToggleMobile">
+      <div class="mode-toggle-slider" id="modeSliderMobile"></div>
+      <button class="mode-btn active" id="btnSummarizeMobile" data-mode="summarize">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h8v2H4V8zm0 4h10v2H4v-2z"/></svg>
+        Summarize
+      </button>
+      <button class="mode-btn" id="btnQAMobile" data-mode="qa">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 12a1 1 0 110-2 1 1 0 010 2zm1-4H9V6h2v4z"/></svg>
+        Q&amp;A
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ MODALS -->
+
+  <!-- ABOUT MODAL -->
+  <div class="modal-backdrop" id="aboutModal" role="dialog" aria-modal="true" aria-label="About LexAI" style="display:none;">
+    <div class="modal-card">
+      <button class="modal-close" data-modal="aboutModal" aria-label="Close">✕</button>
+      <h2 class="modal-title">About LexAI</h2>
+      <p>LexAI is an AI-powered legal document analysis platform purpose-built for Indian legal practitioners. It leverages fine-tuned transformer models to provide accurate summaries and contextual question answering over legal judgments.</p>
+      <div class="modal-models">
+        <div class="modal-model-tag">🔵 deepset/roberta-base-squad2 (QA)</div>
+        <div class="modal-model-tag">🟠 facebook/bart-large-cnn (Summarize)</div>
+      </div>
+      <p class="modal-version">v1.0.0 · BTech Project · March 2026</p>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-container" id="toastContainer" aria-live="assertive"></div>
+
+  <script src="js/fileParser.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
